@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..base import activation
-from ..base.activation import Sigmoid,Identity,Softmax,Relu
-from ..base.initializer import gaussian_initializer,xavier_uniform_initializer
+from ..base import activations
+from ..base.activations import Sigmoid,Identity,Softmax,Relu
+from ..base.initializers import gaussian_initializer,xavier_uniform_initializer
 from layer import Layer,Input
 
 

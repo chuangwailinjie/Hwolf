@@ -1,8 +1,8 @@
 import numpy as np
 
-from ..base import activation
-from ..base.activation import Sigmoid,Relu,Identity
-from ..base.initializer import xavier_uniform_initializer,msra_initializer,gaussian_initializer
+from ..base import activations
+from ..base.activations import Sigmoid,Relu,Identity
+from ..base.initializers import xavier_uniform_initializer,msra_initializer,gaussian_initializer
 from ..ops import _check_convolution_layer
 from layer import Layer
 
@@ -65,7 +65,7 @@ class Conv2d(Layer):
         self.filter_size=filter_size
         self.output_shape=None
         self.zero_padding=zero_padding
-        self.activator=activation.get(activator)
+        self.activator=activations.get(activator)
         self.initializer=initializer
         self.stride=stride if isinstance(stride,list) or isinstance(stride,tuple) \
                         else (stride,stride)
