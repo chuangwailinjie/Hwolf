@@ -2,6 +2,7 @@ import numpy as np
 
 from ..base import optimizers
 from ..base import losses
+from ..layers.core import Softmax
 
 import sys
 
@@ -61,8 +62,7 @@ class Sequential(object):
                 x_batch=train_X[batch_begin:batch_end]
                 y_batch=train_y[batch_begin:batch_end]
 
-                y_pred=self.predict(x_batch,is_tarin=True)
-
+                y_pred=self.predict(x_batch,is_train=True)
                 next_grad=self.loss.backward(y_pred,y_batch)
                 for layer in self.layers[::-1]:
                     next_grad=layer.backward(next_grad)
@@ -119,17 +119,15 @@ class Sequential(object):
                 print(runout, file=file)
 
 
-
-
-
     def predict(self,X,is_train=False):
         x_next=X
         for layer in self.layers[:]:
             x_next=layer.forward(x_next,is_train=is_train)
-        return x_next
+        y_pred=x_next
+        return y_pred
 
     def accuracy(self,outputs,targets):
-        y_predicts=np.agrmax(outputs,axis=1)
+        y_predicts=np.argmax(outputs,axis=1)
         y_targets=np.argmax(targets,axis=1)
         acc= y_predicts==y_targets
         return np.mean(acc)

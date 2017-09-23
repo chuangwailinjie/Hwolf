@@ -3,7 +3,7 @@ import numpy as np
 from ..base import activations
 from ..base.activations import Sigmoid,Identity,Softmax,Relu
 from ..base.initializers import gaussian_initializer,xavier_uniform_initializer
-from layer import Layer,Input
+from ..layers.layer import Layer,Input
 
 
 class FullyConnected(Layer):
@@ -14,12 +14,12 @@ class FullyConnected(Layer):
         super().__init__()
         self.output_dim=output_dim
         self.input_dim=input_dim
-        self.activator=activator
+        self.activator = activations.get(activator)
         self.initializer=initializer
         self.__input_shape=None
         self.__output_shape=None
         # the first layer's input_dim is not None
-        if self.input_dim id not None:
+        if self.input_dim is not None:
             self.connection(None)
 
     @property
@@ -67,7 +67,7 @@ class FullyConnected(Layer):
         return [self.W,self.b]
 
     @property
-    def grad(self):
+    def grads(self):
         return [self.delta_W,self.delta_b]
 
     def call(self,pre_layer=None,*args,**kwargs):
@@ -97,15 +97,16 @@ class FullyConnected(Layer):
         inputs=np.asarray(inputs)
         if len(inputs.shape)==1:#transformer 1-D tensor to 2-D tnsor
             inputs=inputs[None,:]
+        assert list(self.input_shape[1:]) == list(inputs.shape[1:])
         self.input_shape=inputs.shape
-        self.output_shape[0]=inputs.shape[0]#the number of batch size
+        self.output_shape[0]=self.input_shape[0]#the number of batch size
         self.inputs=inputs
         #self.inputs.shape [n,d] self.W.shape [ouput_dim[1],d]
         self.logit=np.dot(self.inputs,self.W.T)+self.b
         self.output=self.activator.forward(self.logit)
-        return self.ouput
+        return self.output
 
-    def backward(self.pre_delta,*args,**kwargs):
+    def backward(self,pre_delta,*args,**kwargs):
         if len(pre_delta.shape)==1:
             pre_delta=pre_delta[None,:]
         batch_size=self.inputs.shape[0]
@@ -116,15 +117,132 @@ class FullyConnected(Layer):
         self.delta=np.dot(act_delta,self.W)
         return self.delta
 
+"""
 class Softmax(FullyConnected):
     def _init__(self,output_dim,input_dim=None,initializer=gaussian_initializer):
         super().__init__(output_dim==output_dim,input_dim=input_dim,
         activator='softmax',initializer=initializer)
+        print(self.activator,'xxxxxxxxxxxxxxxxxxxxx')"""
+
+
+
+class Softmax(Layer):
+    def __init__(self,output_dim,input_dim=None,activator='softmax',
+                    initializer=gaussian_initializer):
+        #input_dim is the sample's shape, and inpur_shape is the n x input_dim
+        #n is the batch_size
+        super().__init__()
+        self.output_dim=output_dim
+        self.input_dim=input_dim
+        self.activator = activations.get(activator)
+        print(self.activator,'xxxxxxxxxxxxxxxxxxxxx')
+        self.initializer=initializer
+        self.__input_shape=None
+        self.__output_shape=None
+        # the first layer's input_dim is not None
+        if self.input_dim is not None:
+            self.connection(None)
+
+    @property
+    def W(self):
+        return self.__W
+
+    @W.setter
+    def W(self,W):
+        self.__W=W
+
+    @property
+    def b(self):
+        return self.__b
+
+    @b.setter
+    def b(self,b):
+        self.__b=b
+
+    @property
+    def delta_W(self):
+        return self.__delta_W
+
+    @delta_W.setter
+    def delta_W(self,delta_W):
+        self.__delta_W=delta_W
+
+    @property
+    def delta_b(self):
+        return self.__delta_b
+
+    @delta_b.setter
+    def delta_b(self,delta_b):
+        self.__delta_b=delta_b
+
+    @property
+    def delta(self):
+        return self.__delta
+
+    @delta.setter
+    def delta(self,delta):
+        self.__delta=delta
+
+    @property
+    def params(self):
+        return [self.W,self.b]
+
+    @property
+    def grads(self):
+        return [self.delta_W,self.delta_b]
+
+    def call(self,pre_layer=None,*args,**kwargs):
+        self.connection(pre_layer)
+        return self
+
+    def connection(self,pre_layer):
+        self.pre_layer=pre_layer
+        if pre_layer is None:#this layer is the first layer
+            if self.input_dim is None:
+                raise ValueError('the first layer must have not none input_dim')
+            self.input_shape=[None,self.input_dim]
+            self.output_shape=[None,self.output_dim]
+        else:
+            pre_layer.next_layer=self
+            self.input_dim=pre_layer.output_shape[1]
+            self.input_shape=pre_layer.output_shape
+            self.output_shape=[pre_layer.output_shape[0],self.output_dim]
+        self.W=self.initializer([self.output_dim,self.input_dim])
+        self.b=self.initializer([self.output_dim])
+        self.delta_b=np.zeros([self.output_dim])
+        self.delta_W=np.zeros([self.output_dim,self.input_dim])
+        #self.delta represtnt inputs_sample(x)'s delta
+        self.delta=np.zeros([self.input_dim])
+
+    def forward(self,inputs,*args,**kwargs):
+        inputs=np.asarray(inputs)
+        if len(inputs.shape)==1:#transformer 1-D tensor to 2-D tnsor
+            inputs=inputs[None,:]
+        assert list(self.input_shape[1:]) == list(inputs.shape[1:])
+        self.input_shape=inputs.shape
+        self.output_shape[0]=self.input_shape[0]#the number of batch size
+        self.inputs=inputs
+        #self.inputs.shape [n,d] self.W.shape [ouput_dim[1],d]
+        self.logit=np.dot(self.inputs,self.W.T)+self.b
+        self.output=self.activator.forward(self.logit)
+        return self.output
+
+    def backward(self,pre_delta,*args,**kwargs):
+        if len(pre_delta.shape)==1:
+            pre_delta=pre_delta[None,:]
+        batch_size=self.inputs.shape[0]
+        #current layer's activator delta is the pre_layer's delta*activaor
+        act_delta=pre_delta*self.activator.backward(self.logit)
+        self.delta_W=np.dot(act_delta.T,self.inputs)
+        self.delta_b=np.mean(act_delta,axis=0)
+        self.delta=np.dot(act_delta,self.W)
+        return self.delta
+
+
 
 
 class Flatten(Layer):
-    def __init__(self,output_dim,input_dim=None,activator='sigmoid',
-                    initializer=gaussian_initializer):
+    def __init__(self):
         super().__init__()
 
     @property
@@ -132,7 +250,7 @@ class Flatten(Layer):
         return list()
 
     @property
-    def grad(self):
+    def grads(self):
         return list()
 
     def call(self,pre_layer=None,*args,**kwargs):
@@ -150,14 +268,14 @@ class Flatten(Layer):
             raise ValueError('flatten layer can`t be the first layer, must have pre_layer')
         self.pre_layer.next_layer=self
         self.input_shape=self.pre_layer.output_shape
-        self.output_shape=_compute_output_shape(self.input_shape)
+        self.output_shape=self._compute_output_shape(self.input_shape)
 
     def forward(self,inputs,*args,**kwargs):
         self.input_shape=inputs.shape
         self.output_shape=self._compute_output_shape(self.input_shape)
         return np.reshape(inputs,self.output_shape)
 
-    def backward(self.pre_delta,*args,**kwargs):
+    def backward(self,pre_delta,*args,**kwargs):
         return np.reshape(pre_delta,self.input_shape)
 
 
@@ -173,7 +291,7 @@ class Dropout(Layer):
         return list()
 
     @property
-    def grad(self):
+    def grads(self):
         return list()
 
     def call(self,pre_layer=None,*args,**kwargs):
@@ -190,7 +308,7 @@ class Dropout(Layer):
         self.pre_layer.next_layer=self
         self.pre_layer=pre_layer
 
-    def forward(self,inputs,is_train=True,*args,*kwargs):
+    def forward(self,inputs,is_train=True,*args,**kwargs):
         self.input=input_shape
         if 0.<self.dropout<1:
             if is_train:
@@ -226,7 +344,7 @@ class Activation(Layer):
     def grads(self):
         return list()
 
-    def call(self,pre_layer=None,*args,.**kwargs):
+    def call(self,pre_layer=None,*args,**kwargs):
         self.connection(pre_layer)
         return self
 
@@ -241,7 +359,7 @@ class Activation(Layer):
             self.input_shape=pre_layer.output_shape
         self.output_shape=self.input_shape
 
-    def forward(self.inputs,*args,**kwargs):
+    def forward(self,inputs,*args,**kwargs):
         inputs=np.asarray(inputs)
         if len(inputs.shape)==1:
             inputs=inputs[None,:]

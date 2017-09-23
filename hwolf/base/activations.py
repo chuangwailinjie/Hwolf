@@ -4,9 +4,9 @@ import numpy as  np
 
 class Activator(object):
     def forward(self,x,*args,**kwargs):
-        raise NotImplementedError('function 'forward' should be implemented!')
+        raise NotImplementedError('function `forward` should be implemented!')
     def backward(self,x,*args,**kwargs):
-        raise NotImplementedError('function 'backward' should be implemented!')
+        raise NotImplementedError('function `backward` should be implemented!')
 
 
 # sigmoid
@@ -106,15 +106,15 @@ class Identity(Activator):
 
 def softmax(x):
     x=np.asarray(x)
-    if len(x.shape)==1:
-        x -= np.max(x)
-        x =np.exp(x)
-        x /=np.sum(x)
-        return x
-    else:
-        x -=np.max(x,axis=1).reshape([x.shape[0],1])
+    if len(x.shape)>1:
+        x-=x.max(axis=1).reshape([x.shape[0],1])
         x=np.exp(x)
         x/=np.sum(x,axis=1).reshape([x.shape[0],1])
+        return x
+    else:
+        x -=np.max(x)
+        x=np.exp(x)
+        x/=np.sum(x)
         return x
 
 def back_softmax(x):
@@ -161,6 +161,32 @@ class Softplus(Activator):
         return back_softplus(x)
 
 
+def selu(z, alpha, scale):
+    """Scaled Exponential Linear Unit. (Klambauer et al., 2017)
+    # Arguments
+        x: A tensor or variable to compute the activation function for.
+    # References
+        - [Self-Normalizing Neural Networks](https://arxiv.org/abs/1706.02515)
+    """
+    z = np.asarray(z)
+    return scale * elu(z, alpha)
+
+def delta_selu(z, alpha, scale):
+    z = np.asarray(z)
+    return scale * delta_elu(z, alpha)
+
+class Selu(Activator):
+    def __init__(self):
+        self.alpha = 1.6732632423543772848170429916717
+        self.scale = 1.0507009873554804934193349852946
+
+    def forward(self, z, *args, **kwargs):
+        return selu(z, self.alpha, self.scale)
+
+    def backward(self, z, *args, **kwargs):
+        return delta_selu(z, self.alpha, self.scale)
+
+
 # Dropout
 
 # accept str or instance type
@@ -179,6 +205,8 @@ def get(activator):
             return LeakyRelu()
         elif activator in ('elu'):
             return Elu()
+        elif activator in ('selu',):
+            return Selu()
         elif activator in ('softmax'):
             return Softmax()
         elif activator in ('tanh'):

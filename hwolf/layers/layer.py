@@ -41,11 +41,11 @@ class Layer(object):
 
     @property
     def params(self):
-        raise NotImplementedError('function `params` should be implemented')
+        raise NotImplementedError('function `get_params` should be implemented')
 
     @property
-    def gradient(self):
-        raise NotImplementedError('function `gradient` should be implemented')
+    def grads(self):
+        raise NotImplementedError('function `get_grads` should be implemented')
 
     def connection(self,pre_layer):
         raise NotImplementedError('function `connection` should be implemented')
@@ -104,20 +104,20 @@ class Input(Layer):
         return list()
 
     @property
-    def gradient(self):
+    def grads(self):
         return list()
 
     def connection(self,pre_layer):
         if pre_layer is not None:
             raise ValueError('Input layer must br the first layer')
-        see=lf.output_shape=self.input_shape
+        self.output_shape=self.input_shape
 
     def call(self,pre_layer=None,*args,**kwargs):
         raise ValueError('Input layer can`t be callable')
 
     def forward(self,inputs,*args,**kwargs):
         inputs=np.asarray(inputs)
-        assert self.input_shape[1:]==inputs.shape[1:]
+        assert self.input_shape[1:] == inputs.shape[1:]
         self.input_shape=inputs.shape
         self.output_shape=self.output_shape
         return inputs

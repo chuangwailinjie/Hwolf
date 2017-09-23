@@ -1,15 +1,15 @@
-import nunpy as np
+import numpy as np
 
 cutoff=1e-12
 
 class Loss(object):
     @staticmethod
-    def forward(self,y_hat,y):
-        raise NotImplementedError('forward function must be implemented')
+    def forward(y_hat, y):
+        raise NotImplementedError('forward function must be implemented.')
 
     @staticmethod
-    def backward(self,y_hat,y):
-        raise NotImplementedError('backward function must be implemented')
+    def backward(y_hat, y):
+        raise NotImplementedError('backward function must be implemented.')
 
 class MeanSquareLoss(Loss):
     """
@@ -43,19 +43,20 @@ class CrossEntropyLoss(Loss):
 class LogLikehoodLoss(Loss):
 
     @staticmethod
-    def forward(y_hat,y):
-        assert (np.abs(np.sum(y_hat,axis=1)-1.0)<cutoff).all()
-        assert (np.abs(np.sum(y,axis=1)-1.0)<cutoff).all()
-        y_hat=_cutoff(y_hat)
-        y=_cutoff(y)
-        return -np.mean(np.sum(np.nan_to_num(y*np.log(y_hat)),axis=1))
+    def forward(y_hat, y):
+        assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
+        assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
+        return -np.mean(np.sum(np.nan_to_num(y * np.log(y_hat)), axis=1))
 
-    def backward(y_hat,y):
-        assert (np.abs(np.sum(y_hat,axis=1)-1.0)<cutoff).all()
-        assert (np.abs(np.sum(y,axis=1)-1.0)<cutoff).all()
-        y_hat=_cutoff(y_hat)
-        y=_cutoff(y)
-        return y_hat-y
+    @staticmethod
+    def backward(y_hat, y):
+        assert (np.abs(np.sum(y_hat, axis=1) - 1.) < cutoff).all()
+        assert (np.abs(np.sum(y, axis=1) - 1.) < cutoff).all()
+        y_hat = _cutoff(y_hat)
+        y = _cutoff(y)
+        return y_hat - y
 
 #to avoid devide zero raise error
 def _cutoff(x):
@@ -68,7 +69,7 @@ mle=LogLikehoodLoss
 
 def get(loss):
     if isinstance(loss,str):
-        loss=loss.tolower()
+        loss=loss.lower()
         if loss in ('mse','meansquareLoss'):
             return MeanSquareLoss
         elif loss in ('cce','crossentropyLoss'):

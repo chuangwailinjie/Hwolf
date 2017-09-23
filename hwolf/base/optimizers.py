@@ -1,7 +1,7 @@
 import numpy as np
 
 class Optimizer(object):
-    def _init__(self,lr=1e-3,decay=0.,grad_clip=-1,lr_min=0,lr_max=np.inf):
+    def __init__(self,lr=1e-3,decay=0.,grad_clip=-1,lr_min=0,lr_max=np.inf):
         self.lr=lr
         self.decay=decay
         self.clip=grad_clip

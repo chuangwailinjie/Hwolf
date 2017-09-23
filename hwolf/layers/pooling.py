@@ -1,10 +1,10 @@
 import numpy as np
 
-from layer import Layer
+from ..layers.layer import Layer
 
 class MaxPoolingLayer(Layer):
 
-    def __init__(self,window_shape,input_shape=None,stride,zero_padding=0):
+    def __init__(self,window_shape,input_shape=None,stride=1,zero_padding=0):
         super().__init__()
         self.input_shape=input_shape
         if isinstance(zero_padding,int):
@@ -49,7 +49,7 @@ class MaxPoolingLayer(Layer):
         self.output_shape=[self.input_shape[0],output_width,output_height,
                             1 if len(self.input_shape)==3 else self.input_shape[3]]
 
-    def padding(self.inputs,zero_padding):
+    def padding(self,inputs,zero_padding):
         inputs=np.asarray(inputs)
         if list(zero_padding)==[0,0]:
             return inputs
@@ -60,7 +60,7 @@ class MaxPoolingLayer(Layer):
 
         if self.ndim==4:
             num,input_height,input_width,channel=inputs.shape
-            padded_input=np.zeros_like([num,input_width+2*self.zero_padding[0]
+            padded_input=np.zeros_like([num,input_width+2*self.zero_padding[0],
                                         input_height+2*self.zero_padding[1],channel])
             padded_input[:,zero_padding[0]:input_height+zero_padding[0],
                             zero_padding[1]:input_width+self.zero_padding[1],:]=inputs
@@ -138,7 +138,7 @@ class MaxPoolingLayer(Layer):
 
         if len(self.input_shape)==3:
             return self.__delta[:,:,:,0]
-        else retuen self.__delta
+        return self.__delta
 
 
 class AvgPoolingLayer(Layer):
@@ -178,7 +178,7 @@ class AvgPoolingLayer(Layer):
         else:
             self.input_shape=pre_layer.output_shape
             self.pre_layer=pre_layer
-            pre_layr.next_layer=self
+            pre_layer.next_layer=self
 
         output_width=(self.input_shape[2]+2*self.zero_padding[1]
                         -self.window_shape[1])//self.stride[1]+1
@@ -187,7 +187,7 @@ class AvgPoolingLayer(Layer):
         self.output_shape=[self.input_shape[0],output_width,output_height,
                             1 if len(self.input_shape)==3 else self.input_shape[3]]
 
-    def padding(self.inputs,zero_padding):
+    def padding(self,inputs,zero_padding):
         inputs=np.asarray(inputs)
         if list(zero_padding)==[0,0]:
             return inputs
@@ -198,7 +198,7 @@ class AvgPoolingLayer(Layer):
 
         if self.ndim==4:
             num,input_height,input_width,channel=inputs.shape
-            padded_input=np.zeros_like([num,input_width+2*self.zero_padding[0]
+            padded_input=np.zeros_like([num,input_width+2*self.zero_padding[0],
                                         input_height+2*self.zero_padding[1],channel])
             padded_input[:,zero_padding[0]:input_height+zero_padding[0],
                             zero_padding[1]:input_width+self.zero_padding[1],:]=inputs
@@ -220,9 +220,9 @@ class AvgPoolingLayer(Layer):
             raise ValueError('.......')
 
         if len(self.output_shape)==3:
-            self.output=np.zeros(list(self.output)+[1])
+            self.output=np.zeros(list(self.output_shape)+[1])
         else:
-            self.output=np.zeros(self.output)
+            self.output=np.zeros(self.output_shape)
 
         self.padded_input=self.padding(self.inputs,self.zero_padding)
 
@@ -244,7 +244,7 @@ class AvgPoolingLayer(Layer):
         if len(self.output_shape)==3:
             return self.output[:,:,:,0]
         else:
-            reutrn self.output
+            return self.output
 
 
 
@@ -253,13 +253,13 @@ class AvgPoolingLayer(Layer):
             self.__delta = np.zeros(tuple(self.input_shape) + (1, ))
         else:
             self.__delta = np.zeros(self.inputs.shape)
-        for idx_c in xrange(self.inputs.shape[3]):
-            for bn in xrange(self.inputs.shape[0]):
+        for idx_c in range(self.inputs.shape[3]):
+            for bn in range(self.inputs.shape[0]):
                 wb = hb = 0
                 he = self.window_shape[0]
                 we = self.window_shape[1]
-                for i in xrange(self.output.shape[1]):
-                    for j in xrange(self.output.shape[2]):
+                for i in range(self.output.shape[1]):
+                    for j in range(self.output.shape[2]):
                         self.__delta[bn,hb:he,wb:we,idx_c] += (pre_delta[bn,i,j,idx_c] \
                             / float(np.prod(self.window_shape)))
                         wb += self.stride[1]

@@ -4,17 +4,17 @@ from ..base import activations
 from ..base.activations import Sigmoid,Relu,Identity
 from ..base.initializers import xavier_uniform_initializer,msra_initializer,gaussian_initializer
 from ..ops import _check_convolution_layer
-from layer import Layer
+from ..layers.layer import Layer
 
 
 class Filter(object):
     def __init__(self,filter_shape,initializer):
         assert len(filter_shape)==3
-        self.filter_shape=filter_shape
-        self.__W=initializer(filter_shape)
-        self.__b=0
-        self.__dela_W=np.zeros(filter_shape)
-        self.__delta_b=0
+        self.filter_shape = filter_shape
+        self.__W = initializer(filter_shape)
+        self.__b = 0.
+        self.__delta_W = np.zeros(filter_shape)
+        self.__delta_b = 0.
 
     @property
     def W(self):
@@ -33,29 +33,29 @@ class Filter(object):
         return self.__delta_b
 
     @W.setter
-    def W(self,W):
-        self.__W=W
+    def W(self, W):
+        self.__W = W
 
-    @b.setattr
-    def b(self,b):
-        self.__b=b
+    @b.setter
+    def b(self, b):
+        self.__b = b
 
     @delta_W.setter
-    def W(self,delta_W):
-        self.__delta_W=delta_W
+    def delta_W(self, delta_W):
+        self.__delta_W = delta_W
 
-    @delta_b.setattr
-    def b(self,delta_b):
-        self.__delta_b=delta_b
+    @delta_b.setter
+    def delta_b(self, delta_b):
+        self.__delta_b = delta_b
 
     def update(self):
-        self.__W-=self.__delta_W
-        self.__b-=self.__delta_b
+        self.__W -= self.__delta_W
+        self.__b -= self.__delta_b
 
 
 class Conv2d(Layer):
     def __init__(self,filter_size,filter_num,input_shape=None,
-                zero_padding=0,stride=1,activator=Relu,initializer=gaussian_initializer):
+                zero_padding=0,stride=1,activator=Relu,initializer=xavier_uniform_initializer):
         super().__init__()
         if isinstance(zero_padding,int):
             zero_padding=(zero_padding,zero_padding)
@@ -135,7 +135,7 @@ class Conv2d(Layer):
         if inputs.ndim==4:
             batch,height,width,channel=inputs.shape
             padded_input=np.zeros([batch,height+2*zero_padding[0],
-                                    width+2*zero_padding,channel])
+                                    width+2*zero_padding[1],channel])
             padded_input[:,zero_padding[0]:height+zero_padding[0],
                             zero_padding[1]:width+zero_padding[1],:]=inputs
             return padded_input
@@ -146,10 +146,8 @@ class Conv2d(Layer):
         return (input_len+2*zero_padding-filter_len)//stride+1
 
     def _calc_output_shape(self,input_shape,filter_shape,stride,zero_padding,filter_num):
-        ouput_height=self._calc_output_size(input_shape[1],filter_shape[0],
-                                                stride[0],zero_padding[0])
-        output_width=self._calc_output_size(input_shape[2],filter_shape[1],
-                                                stride[1],zero_padding[1])
+        output_height=self._calc_output_size(input_shape[1],filter_shape[0],stride[0],zero_padding[0])
+        output_width=self._calc_output_size(input_shape[2],filter_shape[1],stride[1],zero_padding[1])
         output_channel=filter_num
         return [input_shape[0],output_height,output_width,output_channel]
 
@@ -157,7 +155,8 @@ class Conv2d(Layer):
         self.input=np.asarray(inputs)
         assert list(self.input_shape[1:])==list(self.input.shape[1:])
         self.input_shape=self.input.shape
-        self.logit=np.zeros(self.output.shape)
+        self.output_shape[0] = self.input.shape[0]
+        self.logit=np.zeros(self.output_shape)
         self.output=np.zeros(self.output_shape)
         assert list(self.input.shape[1:])==list(self.input_shape[1:])
         self.padded_input=self._padding(self.input,self.zero_padding)
