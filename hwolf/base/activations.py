@@ -161,6 +161,28 @@ class Softplus(Activator):
         return back_softplus(x)
 
 
+
+def elu(z, alpha=1.0):
+    z = np.asarray(z)
+    return np.maximum(z, 0) + alpha * (np.exp(np.minimum(z, 0)) - 1.)
+
+def delta_elu(z, alpha=1.0):
+    z = np.asarray(z)
+    return np.greater_equal(z, 0).astype(int) + \
+                alpha * np.exp(np.minimum(z, 0)) * np.less(z, 0).astype(int)
+
+class Elu(Activator):
+    def __init__(self, alpha=1.0):
+        self.alpha = alpha
+
+    def forward(self, z, *args, **kwargs):
+        return elu(z, self.alpha)
+
+    def backward(self, z, *args, **kwargs):
+        return delta_elu(z, self.alpha)
+
+
+
 def selu(z, alpha, scale):
     """Scaled Exponential Linear Unit. (Klambauer et al., 2017)
     # Arguments

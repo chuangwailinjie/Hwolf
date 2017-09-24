@@ -66,8 +66,8 @@ class Adam(Optimizer):
             v = self.v.get(id(p), np.zeros_like(p))
             self.m[id(p)] = self.beta1 * m + (1 - self.beta1) * g
             self.v[id(p)] = self.beta2 * v + (1 - self.beta2) * g ** 2
-            mb = self.m[id(p)] / (1 - self.beta1 ** (self.iterations + 1))
-            vb = self.v[id(p)] / (1 - self.beta2 ** (self.iterations + 1))
+            mb = self.m[id(p)] / (1 - self.beta1 ** (self.iter + 1))
+            vb = self.v[id(p)] / (1 - self.beta2 ** (self.iter + 1))
             p -= (self.lr * mb / (np.sqrt(vb) + self.epsilon))
         super(Adam, self).update()
 
