@@ -78,7 +78,7 @@ def msra_initializer(shape):
     n = (m+n)/2.0
     return np.random.normal(0,n/2.,shape)
 
-def gaussian_initializer(shape,alpha=0,theta=1):
+def gaussian_initializer(shape,alpha=0,theta=0.1):
     assert theta>0
     return np.random.normal(alpha,theta,shape)
 

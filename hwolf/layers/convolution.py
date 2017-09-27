@@ -55,7 +55,7 @@ class Filter(object):
 
 class Conv2d(Layer):
     def __init__(self,filter_size,filter_num,input_shape=None,
-                zero_padding=0,stride=1,activator=Relu,initializer=xavier_uniform_initializer):
+                zero_padding=0,stride=1,activator=Relu,initializer=gaussian_initializer):
         super().__init__()
         if isinstance(zero_padding,int):
             zero_padding=(zero_padding,zero_padding)

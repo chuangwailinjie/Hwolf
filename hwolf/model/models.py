@@ -6,6 +6,8 @@ from ..layers.core import Softmax
 
 import sys
 
+
+
 class Sequential(object):
     def __init__(self):
         self.layers=list()
@@ -131,6 +133,7 @@ class Sequential(object):
         y_targets=np.argmax(targets,axis=1)
         acc= y_predicts==y_targets
         return np.mean(acc)
+
 
 
 class Model(object):

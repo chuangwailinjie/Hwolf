@@ -46,7 +46,7 @@ class Relu(Activator):
         self.alpha=alpha
         self.max_value=max_value
     def forward(self,x,*args,**kwargs):
-        return relu(x,self.alpha,self.max_value)
+        return relu(x,self.max_value)
     def backward(self,x,*args,**kwargs):
         return back_relu(x,self.alpha,self.max_value)
 

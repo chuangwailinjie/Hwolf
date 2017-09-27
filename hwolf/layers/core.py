@@ -8,7 +8,7 @@ from ..layers.layer import Layer,Input
 
 class FullyConnected(Layer):
     def __init__(self,output_dim,input_dim=None,activator='sigmoid',
-                    initializer=gaussian_initializer):
+                    initializer=xavier_uniform_initializer):
         #input_dim is the sample's shape, and inpur_shape is the n x input_dim
         #n is the batch_size
         super().__init__()

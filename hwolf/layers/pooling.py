@@ -33,6 +33,7 @@ class MaxPoolingLayer(Layer):
         return list()
 
     def connection(self,pre_layer):
+        print('connection')
         if pre_layer is None:
             if self.input_shape is None:
                 raise ValueError('the first layer must have input')
@@ -40,7 +41,7 @@ class MaxPoolingLayer(Layer):
         else:
             self.input_shape=pre_layer.output_shape
             self.pre_layer=pre_layer
-            pre_layr.next_layer=self
+            pre_layer.next_layer=self
 
         output_width=(self.input_shape[2]+2*self.zero_padding[1]
                         -self.window_shape[1])//self.stride[1]+1
@@ -71,7 +72,6 @@ class MaxPoolingLayer(Layer):
         assert list(self.input_shape[1:])==list(inputs.shape[1:])
         self.input_shape=inputs.shape
         self.output_shape[0]=inputs.shape[0]
-
         if inputs.ndim==3:
             inputs=inputs[:,:,:,None]
 
@@ -82,16 +82,18 @@ class MaxPoolingLayer(Layer):
             raise ValueError('input must be the 2-D or 3-D')
 
         if len(self.output_shape)==3:
-            self.output_shape=np.zeros(list(self.output_shape)+[1])
+            self.output=np.zeros(list(self.output_shape)+[1])
         else:
-            self.output_shape=np.zeros(self.output_shape)
+            self.output=np.zeros(self.output_shape)
 
         self.padded_input=self.padding(self.inputs,self.zero_padding)
 
         #the index of max value from window_shape, 2-D,x-y
+        #add a final dimensions,include 2 element
         self.max_ind=np.zeros(list(self.output_shape)+[2],dtype=int)
+        #self.max_ind=np.empty_like(list(self.output_shape)+[2],dtype=int)
 
-        for idx_c in range(self.inputs.shape[3]):#channel
+        for idx_c in range(self.inputs.shape[3]):#filter num
             for bn in range(self.output.shape[0]):#num_sample
                 #wb/hb is the begin index,and he/we is size
                 wb=hb=0
@@ -102,7 +104,7 @@ class MaxPoolingLayer(Layer):
                         self.output[bn,i,j,idx_c]=np.max(self.padded_input[bn,hb:he,wb:we,idx_c])
                         #max_ind is the location of max value of current padded_input window
                         max_ind=np.argmax(self.padded_input[bn,hb:he,wb:we,idx_c])
-                        max_x,max_y=max_ind/self.window_shape[0],max_ind%self.window_shape
+                        max_x,max_y=max_ind//self.window_shape[0],max_ind%self.window_shape[0]
                         self.max_ind[bn,i,j,idx_c]=[max_x+wb,max_y+hb]
                         wb+=self.stride[1]
                         we+=self.stride[1]
@@ -134,7 +136,7 @@ class MaxPoolingLayer(Layer):
                         x-=self.zero_padding[0]
                         y-=self.zero_padding[1]
                         # only the max value index plus pre_delat,others are zeros not change
-                        self._delta[bn,x,y,idx_c]+=pre_delta[bn,i,j,idx_c]
+                        self.__delta[bn,x,y,idx_c]+=pre_delta[bn,i,j,idx_c]
 
         if len(self.input_shape)==3:
             return self.__delta[:,:,:,0]
