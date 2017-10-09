@@ -62,7 +62,23 @@ def cifar_cnn(ROOT):
     model.add(FullyConnected(output_dim=64,activator='relu'))
     #model.add(Flatten())
     model.add(Softmax(10))
-    model.compile('mle',optimizer=SGD(lr=1e-2))
+    model.compile('mle',optimizer=Adam())
+    model.fit(X,y,validation_data=(X_test,y_test),verbose=2)
+
+
+def cifar_cnn_2(ROOT):
+    X, y, X_test, y_test =load_CIFAR10(ROOT)
+
+    model = Sequential()
+    model.add(Input(batch_input_shape=(None,32,32,3)))
+    model.add(Conv2d((3,3),stride=1,filter_num=32,zero_padding=2,activator='relu'))
+    model.add(MaxPoolingLayer((3,3),stride=2))
+    model.add(Conv2d((4, 4), stride=1,filter_num=64,zero_padding=2, activator='relu'))
+    model.add(AvgPoolingLayer((3, 3), stride=2))
+    model.add(Flatten())
+    model.add(FullyConnected(output_dim=64,activator='relu'))
+    model.add(Softmax(10))
+    model.compile('mle',optimizer=Adam())
     model.fit(X,y,validation_data=(X_test,y_test),verbose=2)
 
 
